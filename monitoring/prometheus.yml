@@ -1,0 +1,56 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+# Alertmanager não configurado: alertas disparam na UI (/alerts) mas não enviam notificações.
+# Para habilitar, adicione um serviço alertmanager e descomente:
+#
+# alerting:
+#   alertmanagers:
+#     - static_configs:
+#         - targets: ['alertmanager:9093']
+
+rule_files:
+  - /etc/prometheus/alerts.yml
+
+scrape_configs:
+
+  - job_name: prometheus
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # Exporters de banco — ficam nos projetos (precisam da rede interna do BD)
+  # e se conectam a coleta-observability via alias explícito no compose.
+  - job_name: postgres
+    static_configs:
+      - targets: ['postgres-exporter:9187']
+
+  - job_name: mongodb
+    static_configs:
+      - targets: ['mongodb-exporter:9216']
+
+  # Infraestrutura (node-exporter e cadvisor ficam neste compose)
+  - job_name: node
+    static_configs:
+      - targets: ['node-exporter:9100']
+
+  - job_name: cadvisor
+    static_configs:
+      - targets: ['cadvisor:8080']
+
+  # RabbitMQ (Coleta-Premiada)
+  - job_name: rabbitmq
+    static_configs:
+      - targets: ['rabbitmq:15692']
+
+  # Aplicações Django
+  - job_name: django-core
+    metrics_path: /metrics
+    static_configs:
+      - targets: ['core:8000']
+
+  # MS em desenvolvimento isolado (cp-collection-ms standalone)
+  - job_name: django-ms-dev
+    metrics_path: /metrics
+    static_configs:
+      - targets: ['ms-dev:8001']
