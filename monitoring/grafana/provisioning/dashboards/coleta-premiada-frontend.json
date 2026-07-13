@@ -18,14 +18,172 @@
   "timezone": "America/Fortaleza",
   "title": "Coleta Premiada — Frontend",
   "uid": "coleta-premiada-frontend-main",
-  "version": 1,
+  "version": 2,
   "panels": [
     {
       "id": 1,
+      "title": "Requisições HTTP por Segundo",
+      "description": "Taxa de requisições HTTP recebidas pelo Next.js, por status code",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 0, "w": 12, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "lineWidth": 2, "fillOpacity": 10 },
+          "unit": "reqps",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{ "color": "green", "value": null }]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": { "displayMode": "list", "placement": "bottom" },
+        "tooltip": { "mode": "multi" }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "sum(rate(nextjs_http_requests_total{job=\"django-frontend\"}[5m])) by (status)",
+          "legendFormat": "HTTP {{status}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "Taxa de Erros HTTP 5xx",
+      "description": "Percentual de requisições com erro 5xx no frontend",
+      "type": "stat",
+      "gridPos": { "x": 12, "y": 0, "w": 6, "h": 4 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "min": 0,
+          "max": 1,
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 0.01 },
+              { "color": "red", "value": 0.05 }
+            ]
+          },
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "orientation": "auto",
+        "textMode": "value",
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "auto"
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "sum(rate(nextjs_http_requests_total{job=\"django-frontend\", status=~\"5..\"}[5m])) / sum(rate(nextjs_http_requests_total{job=\"django-frontend\"}[5m]))",
+          "legendFormat": "5xx rate",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "Page Views por Segundo",
+      "description": "Page views (acessos a páginas não-API)",
+      "type": "stat",
+      "gridPos": { "x": 18, "y": 0, "w": 6, "h": 4 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{ "color": "blue", "value": null }]
+          },
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "orientation": "auto",
+        "textMode": "value",
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto"
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "sum(rate(nextjs_page_views_total{job=\"django-frontend\"}[5m]))",
+          "legendFormat": "Page views/s",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "Tempo de Resposta HTTP (p50/p95/p99)",
+      "description": "Percentis de tempo de resposta das requisições ao Next.js",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 8, "w": 12, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "lineWidth": 2, "fillOpacity": 5 },
+          "unit": "s",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 0.5 },
+              { "color": "red", "value": 2 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": { "displayMode": "list", "placement": "bottom" },
+        "tooltip": { "mode": "multi" }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "histogram_quantile(0.50, sum(rate(nextjs_http_request_duration_ms_bucket{job=\"django-frontend\"}[5m])) by (le)) / 1000",
+          "legendFormat": "p50",
+          "refId": "A"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "histogram_quantile(0.95, sum(rate(nextjs_http_request_duration_ms_bucket{job=\"django-frontend\"}[5m])) by (le)) / 1000",
+          "legendFormat": "p95",
+          "refId": "B"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "histogram_quantile(0.99, sum(rate(nextjs_http_request_duration_ms_bucket{job=\"django-frontend\"}[5m])) by (le)) / 1000",
+          "legendFormat": "p99",
+          "refId": "C"
+        }
+      ]
+    },
+    {
+      "id": 5,
       "title": "CPU do Container Frontend",
       "description": "Uso de CPU do container Next.js (via cAdvisor)",
       "type": "timeseries",
-      "gridPos": { "x": 0, "y": 0, "w": 12, "h": 8 },
+      "gridPos": { "x": 12, "y": 4, "w": 12, "h": 6 },
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "fieldConfig": {
         "defaults": {
@@ -58,11 +216,11 @@
       ]
     },
     {
-      "id": 2,
+      "id": 6,
       "title": "Memória do Container Frontend",
       "description": "Uso de memória do container Next.js (via cAdvisor)",
       "type": "timeseries",
-      "gridPos": { "x": 12, "y": 0, "w": 12, "h": 8 },
+      "gridPos": { "x": 12, "y": 10, "w": 12, "h": 6 },
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "fieldConfig": {
         "defaults": {
@@ -73,8 +231,8 @@
             "mode": "absolute",
             "steps": [
               { "color": "green", "value": null },
-              { "color": "yellow", "value": 268435456 },
-              { "color": "red", "value": 536870912 }
+              { "color": "yellow", "value": 536870912 },
+              { "color": "red", "value": 1073741824 }
             ]
           }
         },
@@ -90,59 +248,15 @@
           "expr": "container_memory_working_set_bytes{container_label_com_docker_compose_service=\"frontend\"}",
           "legendFormat": "Memória (working set)",
           "refId": "A"
-        },
-        {
-          "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "expr": "container_memory_rss{container_label_com_docker_compose_service=\"frontend\"}",
-          "legendFormat": "Memória RSS",
-          "refId": "B"
         }
       ]
     },
     {
-      "id": 3,
-      "title": "I/O de Rede do Container Frontend",
-      "description": "Bytes recebidos e transmitidos pelo container (via cAdvisor)",
-      "type": "timeseries",
-      "gridPos": { "x": 0, "y": 8, "w": 12, "h": 8 },
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "fieldConfig": {
-        "defaults": {
-          "color": { "mode": "palette-classic" },
-          "custom": { "lineWidth": 2, "fillOpacity": 10 },
-          "unit": "Bps",
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [{ "color": "green", "value": null }]
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "legend": { "displayMode": "list", "placement": "bottom" },
-        "tooltip": { "mode": "multi" }
-      },
-      "targets": [
-        {
-          "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "expr": "sum(rate(container_network_receive_bytes_total{container_label_com_docker_compose_service=\"frontend\"}[5m]))",
-          "legendFormat": "Recebido",
-          "refId": "A"
-        },
-        {
-          "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "expr": "sum(rate(container_network_transmit_bytes_total{container_label_com_docker_compose_service=\"frontend\"}[5m]))",
-          "legendFormat": "Transmitido",
-          "refId": "B"
-        }
-      ]
-    },
-    {
-      "id": 4,
-      "title": "Reinicializações do Container Frontend",
-      "description": "Total de reinicializações do container (0 é o esperado)",
+      "id": 7,
+      "title": "Reinicializações do Container",
+      "description": "Total de reinicializações (0 é o esperado)",
       "type": "stat",
-      "gridPos": { "x": 12, "y": 8, "w": 12, "h": 8 },
+      "gridPos": { "x": 0, "y": 16, "w": 6, "h": 4 },
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "fieldConfig": {
         "defaults": {
@@ -179,11 +293,51 @@
       ]
     },
     {
-      "id": 5,
-      "title": "Disco I/O do Container Frontend",
-      "description": "Leitura e escrita em disco pelo container (via cAdvisor)",
+      "id": 8,
+      "title": "Erros de Renderização",
+      "description": "Total de erros de renderização do Next.js",
+      "type": "stat",
+      "gridPos": { "x": 6, "y": 16, "w": 6, "h": 4 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "red", "value": 0 }
+            ]
+          },
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "auto"
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "sum(nextjs_render_errors_total{job=\"django-frontend\"})",
+          "legendFormat": "Erros",
+          "refId": "A",
+          "instant": true
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "title": "I/O de Rede do Container Frontend",
+      "description": "Bytes recebidos e transmitidos (via cAdvisor)",
       "type": "timeseries",
-      "gridPos": { "x": 0, "y": 16, "w": 24, "h": 8 },
+      "gridPos": { "x": 0, "y": 20, "w": 24, "h": 8 },
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "fieldConfig": {
         "defaults": {
@@ -204,14 +358,14 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "expr": "sum(rate(container_fs_reads_bytes_total{container_label_com_docker_compose_service=\"frontend\"}[5m]))",
-          "legendFormat": "Leitura",
+          "expr": "sum(rate(container_network_receive_bytes_total{container_label_com_docker_compose_service=\"frontend\"}[5m]))",
+          "legendFormat": "Recebido",
           "refId": "A"
         },
         {
           "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "expr": "sum(rate(container_fs_writes_bytes_total{container_label_com_docker_compose_service=\"frontend\"}[5m]))",
-          "legendFormat": "Escrita",
+          "expr": "sum(rate(container_network_transmit_bytes_total{container_label_com_docker_compose_service=\"frontend\"}[5m]))",
+          "legendFormat": "Transmitido",
           "refId": "B"
         }
       ]

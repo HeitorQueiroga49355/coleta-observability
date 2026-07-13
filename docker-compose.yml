@@ -1,5 +1,5 @@
 # ═══════════════════════════════════════════════════════════════════════════════
-#  coleta-observability — Prometheus + Grafana + exporters de infraestrutura
+#  coleta-observability — Prometheus + Grafana + Alertmanager + exporters
 #
 #  Suba PRIMEIRO, antes dos demais projetos:
 #    docker compose up -d
@@ -8,10 +8,10 @@
 #  conectam a ela para serem descobertos pelo Prometheus.
 #
 #  Ordem de inicialização:
-#    1. cd coleta-observability  && docker compose up -d
-#    2. cd Coleta-Premiada       && docker compose up -d
-#    3. cd cp-collection-ms      && docker compose up -d   (desenvolvimento isolado do MS)
-#    4. cd coleta-premiada-frontend && docker compose up -d
+#    1. cd coleta-observability      && docker compose up -d
+#    2. cd Coleta-Premiada           && docker compose up -d
+#    3. cd cp-collection-ms          && docker compose up -d   (dev isolado do MS)
+#    4. cd coleta-premiada-frontend  && docker compose up -d
 # ═══════════════════════════════════════════════════════════════════════════════
 
 services:
@@ -47,6 +47,28 @@ services:
         reservations:
           cpus: "0.25"
           memory: 256M
+
+  alertmanager:
+    image: prom/alertmanager:latest
+    volumes:
+      - ./monitoring/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+    command:
+      - --config.file=/etc/alertmanager/alertmanager.yml
+      - --storage.path=/alertmanager
+      - --config.expand-env
+    ports:
+      - "9093:9093"
+    networks:
+      - coleta-observability
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: "0.1"
+          memory: 128M
+        reservations:
+          cpus: "0.05"
+          memory: 64M
 
   grafana:
     image: grafana/grafana:latest

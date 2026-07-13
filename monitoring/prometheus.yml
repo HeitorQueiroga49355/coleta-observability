@@ -2,13 +2,12 @@ global:
   scrape_interval: 15s
   evaluation_interval: 15s
 
-# Alertmanager não configurado: alertas disparam na UI (/alerts) mas não enviam notificações.
-# Para habilitar, adicione um serviço alertmanager e descomente:
-#
-# alerting:
-#   alertmanagers:
-#     - static_configs:
-#         - targets: ['alertmanager:9093']
+# Alertmanager configurado para entrega de notificações.
+# Configure os canais em monitoring/alertmanager.yml.
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: ['alertmanager:9093']
 
 rule_files:
   - /etc/prometheus/alerts.yml
@@ -54,3 +53,9 @@ scrape_configs:
     metrics_path: /metrics
     static_configs:
       - targets: ['ms-dev:8001']
+
+  # Frontend Next.js (coleta-premiada-frontend)
+  - job_name: nextjs-frontend
+    metrics_path: /metrics
+    static_configs:
+      - targets: ['frontend:3001']
