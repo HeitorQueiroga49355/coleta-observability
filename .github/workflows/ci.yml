@@ -1,0 +1,20 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_call:
+
+jobs:
+  smoke-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup env
+        run: cp .env.example .env
+      - name: Start stack
+        run: docker compose up -d --wait
+      - name: Healthcheck Prometheus
+        run: curl -f http://localhost:9090/-/healthy
+      - name: Healthcheck Grafana
+        run: curl -f http://localhost:3001/api/health
