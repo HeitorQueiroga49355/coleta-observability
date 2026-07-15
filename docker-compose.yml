@@ -84,6 +84,7 @@ services:
       - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
     depends_on:
       - prometheus
+      - loki
     networks:
       - coleta-observability
     restart: unless-stopped
@@ -145,9 +146,55 @@ services:
           cpus: "0.1"
           memory: 64M
 
+  loki:
+    image: grafana/loki:3.3.2
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./monitoring/loki/config.yml:/etc/loki/config.yml:ro
+      - loki-data:/loki
+    command: -config.file=/etc/loki/config.yml
+    networks:
+      - coleta-observability
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO/dev/null http://localhost:3100/ready"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512M
+        reservations:
+          cpus: "0.25"
+          memory: 256M
+
+  promtail:
+    image: grafana/promtail:3.3.2
+    volumes:
+      - ./monitoring/promtail/config.yml:/etc/promtail/config.yml:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: -config.file=/etc/promtail/config.yml
+    depends_on:
+      - loki
+    networks:
+      - coleta-observability
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: "0.1"
+          memory: 128M
+        reservations:
+          cpus: "0.05"
+          memory: 64M
+
 volumes:
   prometheus-data:
   grafana-data:
+  loki-data:
 
 networks:
   coleta-observability:
